@@ -74,35 +74,6 @@
 
     <div id="message" class="message"></div>
     <script>
-        // хранения кук
-        let storedCookies = {};
-        // Извлечение кук из ответа сервера(функция)
-        function extractCookiesFromResponse(response) {
-            const cookiesHeader = response.headers.get('set-cookie');
-            if (cookiesHeader) {
-                const cookies = cookiesHeader.split(/,\s*/);
-                cookies.forEach(cookie => {
-                    const [cookieNameValue, ..._rest] = cookie.split(';');
-                    const [name, value] = cookieNameValue.split('=');
-                    storedCookies[name] = value;
-                });
-            }
-            return response;
-        }
-        
-        // Функция для добавления кук в заголовки запроса
-        function addCookiesToRequest(options = {}) {
-            const cookiesString = Object.entries(storedCookies)
-                .map(([name, value]) => `${name}=${value}`)
-                .join('; ');
-            
-            if (cookiesString) {
-                options.headers = options.headers || {};
-                options.headers['Cookie'] = cookiesString;
-            }
-            return options;
-        }
-        
         // Функция для показа сообщений
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
@@ -129,7 +100,6 @@
                 },
                 body: JSON.stringify({ phone: phoneNumber }),
             })
-            .then(extractCookiesFromResponse)
             .then(async (response) => {
                 if (!response.ok) {
                     const errorData = await response.text();
@@ -157,16 +127,17 @@
                 return;
             }
             
-            const requestOptions = addCookiesToRequest({
+            
+            fetch('http://45.10.41.142:8080/admin/verify', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ code: code }),
-            });
-            
-            fetch('http://45.10.41.142:8080/admin/verify', requestOptions)
-            .then(extractCookiesFromResponse)
+
+            })
+            // .then(extractCookiesFromResponse)
             .then(async (response) => {
                 if (!response.ok) {
                     const errorData = await response.text();
