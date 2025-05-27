@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Форма ввода телефона</title>
     <style>
-             body {
+        body {
             font-family: Arial, sans-serif;
             max-width: 400px;
             margin: 0 auto;
@@ -74,43 +74,75 @@
 
     <div id="message" class="message"></div>
     <script>
+        // хранения кук
+        let storedCookies = {};
+        // Извлечение кук из ответа сервера(функция)
+        function extractCookiesFromResponse(response) {
+            const cookiesHeader = response.headers.get('set-cookie');
+            if (cookiesHeader) {
+                const cookies = cookiesHeader.split(/,\s*/);
+                cookies.forEach(cookie => {
+                    const [cookieNameValue, ..._rest] = cookie.split(';');
+                    const [name, value] = cookieNameValue.split('=');
+                    storedCookies[name] = value;
+                });
+            }
+            return response;
+        }
+        
+        // Функция для добавления кук в заголовки запроса
+        function addCookiesToRequest(options = {}) {
+            const cookiesString = Object.entries(storedCookies)
+                .map(([name, value]) => `${name}=${value}`)
+                .join('; ');
+            
+            if (cookiesString) {
+                options.headers = options.headers || {};
+                options.headers['Cookie'] = cookiesString;
+            }
+            return options;
+        }
+        
+        // Функция для показа сообщений
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+        }
+
+        // Отправка номера телефона
         document.getElementById('phoneForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const phoneNumber = document.getElementById('phoneNumber').value;
-            const messageDiv = document.getElementById('message');
             
-            // Проверка номера телефона (простая валидация)
+            // Проверка номера телефона
             if (!phoneNumber.match(/^\+?[0-9\s\-\(\)]{10,20}$/)) {
-                messageDiv.textContent = 'Пожалуйста, введите корректный номер телефона';
-                messageDiv.className = 'message error';
+                showMessage('Пожалуйста, введите корректный номер телефона', 'error');
                 return;
             }
-            
-            // URL вашего сервера
-            const url = 'http://45.10.41.142:8080/admin/send';
-            
-            fetch(url, {
+            // Отправка номера телефона
+            fetch('http://45.10.41.142:8080/admin/send', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ phone: phoneNumber }),
             })
-            .then(response => {
+            .then(extractCookiesFromResponse)
+            .then(async (response) => {
                 if (!response.ok) {
-                    throw new Error('Ошибка сети');
+                    const errorData = await response.text();
+                    throw new Error(errorData);
                 }
                 return response.json();
             })
             .then(data => {
-                // Переключаем на форму ввода кода
                 document.getElementById('phoneFormContainer').classList.add('hidden');
                 document.getElementById('codeFormContainer').classList.remove('hidden');
             })
             .catch(error => {
-                messageDiv.textContent = 'Произошла ошибка при отправке: ' + error.message;
-                messageDiv.className = 'message error';
+                showMessage(`Ошибка: ${error.message}`, 'error');
             });
         });
 
@@ -119,33 +151,35 @@
             e.preventDefault();
             
             const code = document.getElementById('verificationCode').value;
-            const messageDiv = document.getElementById('message');
             
             if (!code.match(/^\d{6}$/)) {
                 showMessage('Код должен состоять из 6 цифр', 'error');
                 return;
             }
             
-            // Здесь URL вашего API для проверки кода
-            fetch('http://45.10.41.142:8080/admin/verify', {
+            const requestOptions = addCookiesToRequest({
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ code: code }),
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Неверный код');
+            });
+            
+            fetch('http://45.10.41.142:8080/admin/verify', requestOptions)
+            .then(extractCookiesFromResponse)
+            .then(async (response) => {
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(errorData);
+                }
                 return response.json();
             })
             .then(data => {
                 showMessage('Номер успешно подтвержден!', 'success');
-                // Здесь можно сделать редирект или другую логику после подтверждения
+                // Редирект или другая логика после подтверждения
             })
             .catch(error => {
-                // showMessage('Ошибка: ' + error.message, 'error');
-                messageDiv.textContent = 'Произошла ошибка при отправке кода: ' + error.message;
-                messageDiv.className = 'message error';
+                showMessage(`Ошибка: ${error.message}`, 'error');
             });
         });
     </script>
