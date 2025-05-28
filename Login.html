@@ -74,18 +74,19 @@
 
     <div id="message" class="message"></div>
     <script>
+        const baseUrl = "http://45.10.41.142:8080/";
         // Функция для показа сообщений
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = text;
             messageDiv.className = `message ${type}`;
         }
-
+        let phoneNumber = "";
         // Отправка номера телефона
         document.getElementById('phoneForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const phoneNumber = document.getElementById('phoneNumber').value;
+            phoneNumber = document.getElementById('phoneNumber').value;
             
             // Проверка номера телефона
             if (!phoneNumber.match(/^\+?[0-9\s\-\(\)]{10,20}$/)) {
@@ -93,7 +94,7 @@
                 return;
             }
             // Отправка номера телефона
-            fetch('http://45.10.41.142:8080/admin/send', {
+            fetch(baseUrl + 'admin/auth/send', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -128,13 +129,13 @@
             }
             
             
-            fetch('http://45.10.41.142:8080/admin/verify', {
+            fetch(baseUrl + 'admin/auth/verify', {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ code: code }),
+                body: JSON.stringify({ code: code, phone: phoneNumber }),
 
             })
             // .then(extractCookiesFromResponse)
