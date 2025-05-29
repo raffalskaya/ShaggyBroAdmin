@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "noImplicitThis": true,
+    "noImplicitAny": false,
+    "preserveConstEnums": true,
+    "removeComments": true,
+    "strictNullChecks": true,
+    "inlineSourceMap": false,
+    "baseUrl": ".",
+    "module": "es2020",
+    "lib": ["dom", "es2020"],
+    "target": "es2020",
+    "strict": false,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "useDefineForClassFields": true,
+    "sourceMap": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "noEmit": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "paths": {
+      "models/*": [ "sources/models/*" ],
+      "views/*": [ "sources/views/*" ],
+    },
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "include": [
+    "sources/**/*.ts",
+    "sources/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "static",
+    "dist"
+  ],
+  "files": [
+    "static/webix/types/webix.global.d.ts",
+    "static/webix/types/webix.d.ts"
+  ]
+}
